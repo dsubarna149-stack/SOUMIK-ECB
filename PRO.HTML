@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soumik's Gadget Zone Pro</title>
+    
+    <!-- 1. Firebase Libraries -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <!-- 2. EmailJS Library -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <style>
+        /* --- 🎨 PROFESSIONAL UI DESIGN --- */
+        body { font-family: 'Poppins', sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #333; }
+        
+        header { 
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe); 
+            color: white; padding: 25px; text-align: center; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            position: relative;
+        }
+        header h1 { margin: 0; font-size: 26px; letter-spacing: 1px; }
+
+        .container { max-width: 1200px; margin: 20px auto; padding: 20px; }
+        .hidden { display: none !important; }
+        
+        /* Buttons */
+        button { 
+            width: 100%; padding: 12px; border: none; border-radius: 25px; 
+            background: linear-gradient(45deg, #0984e3, #74b9ff); 
+            color: white; font-weight: bold; cursor: pointer; margin-top: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2); transition: 0.3s;
+        }
+        button:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .secondary-btn { background: #636e72; color: white; }
+        .logout-btn { position: absolute; right: 20px; top: 22px; width: auto; padding: 8px 18px; background: #d63031; font-size: 14px; }
+
+        /* Admin Action Buttons (Edit/Delete) */
+        .action-btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        .edit-btn { background: #f1c40f; color: #000; width: 50%; border-radius: 10px; font-size: 14px; padding: 8px; }
+        .del-btn { background: #e74c3c; color: white; width: 50%; border-radius: 10px; font-size: 14px; padding: 8px; }
+
+        /* Inputs */
+        input, textarea { 
+            width: 100%; padding: 13px; margin: 10px 0; 
+            border: 1px solid #ddd; border-radius: 12px; 
+            box-sizing: border-box; outline: none; font-size: 14px;
+        }
+        input:focus, textarea:focus { border-color: #6c5ce7; box-shadow: 0 0 8px rgba(108, 92, 231, 0.2); }
+
+        /* Auth/Login Box */
+        .auth-box { 
+            background: white; padding: 40px; border-radius: 20px; 
+            box-shadow: 0 10px 35px rgba(0,0,0,0.08); 
+            max-width: 420px; margin: 60px auto; text-align: center;
+        }
+
+        /* Product Cards */
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; }
+        .card { 
+            background: white; border-radius: 18px; overflow: hidden; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05); transition: 0.3s; 
+            display: flex; flex-direction: column;
+        }
+        .card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        
+        /* Multi-Image Slider */
+        .image-slider { 
+            display: flex; overflow-x: auto; scroll-snap-type: x mandatory; 
+            width: 100%; height: 300px; background: #fff; border-bottom: 1px solid #f1f1f1;
+        }
+        .image-slider::-webkit-scrollbar { height: 4px; }
+        .image-slider::-webkit-scrollbar-thumb { background: #6c5ce7; border-radius: 10px; }
+        .image-slider img { 
+            flex: 0 0 100%; width: 100%; height: 100%; 
+            scroll-snap-align: start; object-fit: contain; padding: 5px;
+        }
+
+        .card-body { padding: 22px; text-align: center; }
+        .card h3 { margin: 0 0 10px; color: #2d3436; font-size: 22px; }
+        .price { color: #e17055; font-weight: bold; font-size: 26px; margin-bottom: 12px; display: block; }
+        .desc { font-size: 14px; color: #636e72; line-height: 1.6; margin-bottom: 18px; }
+
+        /* Admin Table */
+        .table-container { 
+            overflow-x: auto; background: white; border-radius: 15px; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05); margin-top: 25px; 
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        th, td { padding: 16px; text-align: left; border-bottom: 1px solid #f1f1f1; font-size: 14px; }
+        th { background: #2d3436; color: white; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; }
+        tr:hover { background: #fcfcfc; }
+        .sl-no { font-weight: bold; color: #6c5ce7; width: 50px; text-align: center; }
+
+        /* Modal */
+        .modal-overlay { 
+            position: fixed; top:0; left:0; width:100%; height:100%; 
+            background:rgba(0,0,0,0.85); display:flex; justify-content:center; align-items:center; z-index:2000; 
+        }
+        .modal-content { 
+            background:white; padding:35px; border-radius:25px; 
+            width:90%; max-width:440px; text-align:center; box-shadow: 0 25px 60px rgba(0,0,0,0.4); 
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🛍️ Soumik's Gadget Zone Pro</h1>
+        <button id="logoutBtn" class="logout-btn hidden" onclick="logoutUser()">Logout</button>
+    </header>
+
+    <div class="container">
+
+        <!-- 1. MAIN MENU -->
+        <div id="login-menu" class="auth-box">
+            <h2 style="color:#6c5ce7">Welcome</h2>
+            <p>Select your portal</p>
+            <button onclick="showSection('customer-auth')">👤 Customer Portal</button>
+            <button class="secondary-btn" onclick="showSection('admin-auth')">👑 Admin Control</button>
+        </div>
+
+        <!-- 2. CUSTOMER AUTHENTICATION -->
+        <div id="customer-auth" class="auth-box hidden">
+            <h3>Customer Entry</h3>
+            <div id="c-step-1">
+                <input type="email" id="u-email" placeholder="Gmail Address">
+                <button id="checkBtn" onclick="handleUserCheck()">Continue ➔</button>
+            </div>
+            
+            <div id="c-step-login" class="hidden">
+                <p>Welcome back! Enter Password</p>
+                <input type="password" id="u-pass" placeholder="Password">
+                <button onclick="userLogin()">Login</button>
+            </div>
+            
+            <div id="c-step-register" class="hidden">
+                <p style="color:#2ecc71; font-weight:bold;">📧 OTP Sent to Email!</p>
+                <input type="number" id="u-otp" placeholder="4-Digit OTP">
+                <input type="text" id="new-name" placeholder="Your Full Name">
+                <input type="text" id="new-addr" placeholder="Full Delivery Address">
+                <input type="password" id="new-pass" placeholder="Create a Password">
+                <button onclick="userRegister()">Create Account</button>
+            </div>
+            <button class="secondary-btn" onclick="location.reload()">Back</button>
+        </div>
+
+        <!-- 3. ADMIN AUTHENTICATION -->
+        <div id="admin-auth" class="auth-box hidden">
+            <h3>👑 Admin Access</h3>
+            <p style="font-size:12px; color:#999;">Only for Rajendra Dey</p>
+            <input type="text" id="adminId" placeholder="Admin ID">
+            <input type="password" id="adminPass" placeholder="Password">
+            <button onclick="adminLogin()">Secure Login</button>
+            <button class="secondary-btn" onclick="location.reload()">Back</button>
+        </div>
+
+        <!-- 4. CUSTOMER SHOP -->
+        <div id="user-shop" class="hidden">
+            <h2 id="user-welcome-text" style="border-left: 6px solid #6c5ce7; padding-left: 15px; margin-bottom: 35px; color:#2d3436;"></h2>
+            <div class="product-grid" id="product-display"></div>
+        </div>
+
+        <!-- 5. ADMIN DASHBOARD -->
+        <div id="admin-dash" class="hidden">
+            <!-- Add/Edit Form -->
+            <div class="auth-box" style="max-width: 100%; text-align: left; background: #fafafa; border: 1px solid #eee;">
+                <h3 id="form-title" style="color:#6c5ce7;">➕ Add New Product</h3>
+                <!-- Hidden input to store product ID when editing -->
+                <input type="hidden" id="edit-product-id"> 
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <input type="text" id="p-name" placeholder="Product Name">
+                    <input type="text" id="p-price" placeholder="Price (e.g. 1,45,000)">
+                </div>
+                <textarea id="p-images" placeholder="Image URLs (Separated by comma , )"></textarea>
+                <textarea id="p-desc" placeholder="Details (Specs, Color, Warranty)"></textarea>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button id="save-btn" onclick="submitProduct()">Save Product</button>
+                    <button id="cancel-btn" class="secondary-btn hidden" onclick="resetForm()">Cancel Edit</button>
+                </div>
+            </div>
+
+            <!-- Orders Management -->
+            <h3 style="margin-top:50px; color:#d63031;">📦 Live Orders (Numbered)</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>SL</th> <!-- Numbering Column -->
+                            <th>Customer Name</th>
+                            <th>Ordered Item</th>
+                            <th>Phone / Action</th>
+                            <th>Address</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-order-table"></tbody>
+                </table>
+            </div>
+
+            <!-- Inventory Management -->
+            <h3 style="margin-top:50px; color:#0984e3;">🛠️ Manage Inventory (Edit/Delete)</h3>
+            <div class="product-grid" id="admin-inventory-list"></div>
+        </div>
+    </div>
+
+    <!-- BOOKING SUCCESS MODAL -->
+    <div id="booking-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div style="font-size: 60px; color: #2ecc71; margin-bottom: 10px;">✅</div>
+            <h3 style="color:#2ecc71;">Order Confirmed!</h3>
+            <p>Your booking has been recorded.</p>
+            <p style="font-size:14px; color:#666;">What next?</p>
+            
+            <button onclick="window.location.href='tel:9474066516'" style="background:#0984e3;">📞 Call Owner Now</button>
+            
+            <div style="margin: 20px 0; color: #ccc; position: relative;">
+                <span style="background: white; padding: 0 10px;">OR</span>
+                <div style="height: 1px; background: #eee; position: absolute; top: 50%; width: 100%; z-index: -1;"></div>
+            </div>
+            
+            <p style="font-size:13px; font-weight:bold; color:#555;">Request a callback:</p>
+            <input type="number" id="callback-phone" placeholder="Enter Your Phone Number">
+            <button onclick="requestCallback()" style="background:#6c5ce7;">Submit Request</button>
+            <button class="secondary-btn" onclick="closeModal()" style="margin-top:15px; font-size:12px;">Close & Continue Shopping</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. FIREBASE CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDMGlUp0sNJZ3SrTYF5F_GaRYW0q12bgD4",
+            authDomain: "soumikstore.firebaseapp.com",
+            databaseURL: "https://soumikstore-default-rtdb.firebaseio.com",
+            projectId: "soumikstore",
+            storageBucket: "soumikstore.firebasestorage.app",
+            messagingSenderId: "1031218041804",
+            appId: "1:1031218041804:web:25fbb0123cb257b4c30369"
+        };
+        
+        try { firebase.initializeApp(firebaseConfig); } catch(e) {}
+        const db = firebase.database();
+        
+        // EmailJS
+        const SERVICE_ID = "service_q28prq1";
+        const TEMPLATE_ID = "template_k55yzzs";
+        const PUBLIC_KEY = "bNTQuWNmud90javrS";
+        (function(){ emailjs.init(PUBLIC_KEY); })();
+
+        // Global Variables
+        let cleanEmail = "";
+        let generatedOTP = 0;
+        let loggedUser = {};
+        let activeBookingKey = "";
+
+        // AUTO-LOGIN
+        window.onload = function() {
+            const saved = localStorage.getItem('soumikSession');
+            if(saved) {
+                loggedUser = JSON.parse(saved);
+                enterUserShop();
+            }
+        };
+
+        // --- 2. AUTHENTICATION LOGIC ---
+        function handleUserCheck() {
+            const email = document.getElementById('u-email').value.trim();
+            if(!email.includes('@')) return alert("Invalid Email!");
+            cleanEmail = email.toLowerCase().replace(/\./g, ',');
+            
+            document.getElementById('checkBtn').innerText = "Checking...";
+            
+            db.ref('users/' + cleanEmail).once('value', (s) => {
+                document.getElementById('c-step-1').classList.add('hidden');
+                if(s.exists()) {
+                    loggedUser = s.val();
+                    document.getElementById('c-step-login').classList.remove('hidden');
+                } else {
+                    generatedOTP = Math.floor(1000 + Math.random() * 9000);
+                    emailjs.send(SERVICE_ID, TEMPLATE_ID, { email: email, passcode: generatedOTP })
+                    .then(() => alert("OTP Sent to " + email))
+                    .catch(() => alert("Email Error. Use OTP: " + generatedOTP));
+                    document.getElementById('c-step-register').classList.remove('hidden');
+                }
+            });
+        }
+
+        function userLogin() {
+            if(document.getElementById('u-pass').value === loggedUser.password) {
+                localStorage.setItem('soumikSession', JSON.stringify(loggedUser));
+                enterUserShop();
+            } else alert("❌ Wrong Password!");
+        }
+
+        function userRegister() {
+            const otp = document.getElementById('u-otp').value;
+            const name = document.getElementById('new-name').value;
+            const addr = document.getElementById('new-addr').value;
+            const pass = document.getElementById('new-pass').value;
+
+            if(otp == generatedOTP && name && pass) {
+                const data = { name, address: addr, password: pass, email: cleanEmail };
+                db.ref('users/' + cleanEmail).set(data).then(() => {
+                    loggedUser = data;
+                    localStorage.setItem('soumikSession', JSON.stringify(data));
+                    enterUserShop();
+                });
+            } else alert("Invalid OTP or Missing Info!");
+        }
+
+        function adminLogin() {
+            const id = document.getElementById('adminId').value;
+            const pass = document.getElementById('adminPass').value;
+            if(id === "RAJENDRADEY" && pass === "9762SOUMIK") {
+                document.getElementById('admin-auth').classList.add('hidden');
+                document.getElementById('admin-dash').classList.remove('hidden');
+                document.getElementById('logoutBtn').classList.remove('hidden');
+                loadAdminPanel();
+            } else alert("Access Denied!");
+        }
+
+        // --- 3. SHOP & BOOKING LOGIC ---
+        function enterUserShop() {
+            document.getElementById('login-menu').classList.add('hidden');
+            document.getElementById('customer-auth').classList.add('hidden');
+            document.getElementById('user-shop').classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+            document.getElementById('user-welcome-text').innerText = `Welcome, ${loggedUser.name}`;
+            
+            db.ref('products').on('value', (snapshot) => {
+                const list = document.getElementById('product-display');
+                list.innerHTML = '';
+                const data = snapshot.val();
+                if(data) {
+                    Object.keys(data).forEach(key => {
+                        const p = data[key];
+                        const imgArr = Array.isArray(p.images) ? p.images : [p.images || p.img];
+                        let slides = "";
+                        imgArr.forEach(url => slides += `<img src="${url}" onerror="this.src='https://via.placeholder.com/400?text=No+Image'">`);
+                        
+                        list.innerHTML += `
+                        <div class="card">
+                            <div class="image-slider">${slides}</div>
+                            <div class="card-body">
+                                <h3>${p.name}</h3>
+                                <span class="price">₹${p.price}</span>
+                                <p class="desc">${p.desc}</p>
+                                <button onclick="confirmBooking('${p.name}')">🛒 Book This Item</button>
+                            </div>
+                        </div>`;
+                    });
+                } else {
+                    list.innerHTML = "<p style='padding:20px'>No products available.</p>";
+                }
+            });
+        }
+
+        function confirmBooking(name) {
+            if(confirm(`Do you want to book ${name}?`)) {
+                if(confirm(`Final Check: Confirm order for ${name}?`)) {
+                    const bookingRef = db.ref('bookings').push();
+                    activeBookingKey = bookingRef.key;
+                    
+                    bookingRef.set({
+                        name: loggedUser.name,
+                        address: loggedUser.address,
+                        product: name,
+                        date: new Date().toLocaleString(),
+                        customerPhone: "Not Shared Yet"
+                    }).then(() => {
+                        document.getElementById('booking-modal').classList.remove('hidden');
+                    });
+                }
+            }
+        }
+
+        function requestCallback() {
+            const ph = document.getElementById('callback-phone').value;
+            if(ph.length < 10) return alert("Enter valid 10-digit Phone No!");
+            db.ref('bookings/' + activeBookingKey).update({ customerPhone: ph }).then(() => {
+                alert("Request Sent!");
+                closeModal();
+            });
+        }
+
+        function closeModal() { document.getElementById('booking-modal').classList.add('hidden'); }
+
+        // --- 4. ADMIN FEATURES (EDIT/DELETE/NUMBERING) ---
+        function loadAdminPanel() {
+            // A. Orders List (Numbered)
+            db.ref('bookings').on('value', (s) => {
+                const tbody = document.getElementById('admin-order-table');
+                tbody.innerHTML = '';
+                const data = s.val();
+                if(data) {
+                    let counter = 1;
+                    // Reverse to show latest first
+                    const entries = Object.entries(data).reverse();
+                    
+                    entries.forEach(([key, b]) => {
+                        tbody.innerHTML += `
+                        <tr>
+                            <td class="sl-no">${counter++}</td>
+                            <td>${b.name}</td>
+                            <td style="color:#0984e3; font-weight:bold">${b.product}</td>
+                            <td><a href="tel:${b.customerPhone}" style="color:#2ecc71; font-weight:bold; text-decoration:none;">${b.customerPhone}</a></td>
+                            <td>${b.address}</td>
+                            <td style="font-size:12px; color:#666">${b.date}</td>
+                        </tr>`;
+                    });
+                }
+            });
+
+            // B. Inventory List (With Edit/Delete)
+            db.ref('products').on('value', (s) => {
+                const inv = document.getElementById('admin-inventory-list');
+                inv.innerHTML = '';
+                const data = s.val();
+                if(data) {
+                    Object.keys(data).forEach(key => {
+                        const p = data[key];
+                        const firstImg = Array.isArray(p.images) ? p.images[0] : (p.images || p.img);
+                        inv.innerHTML += `
+                        <div class="card" style="padding:10px;">
+                            <img src="${firstImg}" style="height:120px; object-fit:contain; border-radius:10px;">
+                            <h4 style="margin:10px 0;">${p.name}</h4>
+                            <p class="price" style="font-size:18px;">₹${p.price}</p>
+                            
+                            <div class="action-btn-group">
+                                <button class="edit-btn" onclick="prefillEdit('${key}')">✏️ Edit</button>
+                                <button class="del-btn" onclick="deleteProd('${key}')">🗑️ Delete</button>
+                            </div>
+                        </div>`;
+                    });
+                }
+            });
+        }
+
+        // --- 5. PRODUCT MANAGEMENT ---
+        function submitProduct() {
+            const key = document.getElementById('edit-product-id').value;
+            const name = document.getElementById('p-name').value;
+            const price = document.getElementById('p-price').value;
+            const imgs = document.getElementById('p-images').value;
+            const desc = document.getElementById('p-desc').value;
+
+            if(!name || !price || !imgs) return alert("Fill Name, Price & Images!");
+
+            const imgArr = imgs.split(',').map(u => u.trim());
+            const pData = { name, price, images: imgArr, desc };
+
+            if(key) {
+                // Update Existing Product
+                db.ref('products/' + key).update(pData).then(() => {
+                    alert("Product Updated!");
+                    resetForm();
+                });
+            } else {
+                // Add New Product
+                db.ref('products').push(pData).then(() => {
+                    alert("Product Added!");
+                    resetForm();
+                });
+            }
+        }
+
+        function prefillEdit(key) {
+            // Load data into form for editing
+            db.ref('products/' + key).once('value', (s) => {
+                const p = s.val();
+                document.getElementById('edit-product-id').value = key;
+                document.getElementById('p-name').value = p.name;
+                document.getElementById('p-price').value = p.price;
+                const imgStr = Array.isArray(p.images) ? p.images.join(', ') : (p.images || p.img);
+                document.getElementById('p-images').value = imgStr;
+                document.getElementById('p-desc').value = p.desc;
+
+                // Change UI to Edit Mode
+                document.getElementById('form-title').innerText = "✏️ Edit Product";
+                document.getElementById('save-btn').innerText = "Update Product";
+                document.getElementById('cancel-btn').classList.remove('hidden');
+                
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+
+        function deleteProd(key) {
+            if(confirm("Are you sure you want to DELETE this product forever?")) {
+                db.ref('products/' + key).remove();
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('edit-product-id').value = "";
+            document.getElementById('p-name').value = "";
+            document.getElementById('p-price').value = "";
+            document.getElementById('p-images').value = "";
+            document.getElementById('p-desc').value = "";
+            
+            document.getElementById('form-title').innerText = "➕ Add New Product";
+            document.getElementById('save-btn').innerText = "Save Product";
+            document.getElementById('cancel-btn').classList.add('hidden');
+        }
+
+        // --- UTILS ---
+        function showSection(id) {
+            document.getElementById('login-menu').classList.add('hidden');
+            document.getElementById(id).classList.remove('hidden');
+        }
+        
+        function logoutUser() {
+            localStorage.clear();
+            location.reload();
+        }
+    </script>
+</body>
+</html>
